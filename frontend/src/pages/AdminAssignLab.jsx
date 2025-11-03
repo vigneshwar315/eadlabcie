@@ -31,6 +31,16 @@ export default function AdminAssignLab(){
     section: "IT-1"
   });
 
+  // User Management Filter States
+  const [filterRole, setFilterRole] = useState("all");
+  const [filterDepartment, setFilterDepartment] = useState("all");
+  const [filterSearch, setFilterSearch] = useState("");
+  
+  // *** NEW FILTER STATES ADDED HERE ***
+  const [filterSemester, setFilterSemester] = useState("all");
+  const [filterSection, setFilterSection] = useState("all");
+  // **********************************
+
   useEffect(() => {
     fetchLabs();
     fetchFaculty();
@@ -158,6 +168,27 @@ export default function AdminAssignLab(){
       [field]: value
     }));
   };
+
+  // Helper function for user filtering logic
+  const filteredUsers = users.filter(user => {
+    if (filterRole !== "all" && user.role !== filterRole) return false;
+    if (filterDepartment !== "all" && user.department !== filterDepartment) return false;
+
+    // *** NEW SEMESTER FILTER LOGIC ***
+    if (filterSemester !== "all" && user.role === 'student') {
+        // Ensure both filter and user semester are treated as numbers for comparison
+        if (Number(user.semester) !== Number(filterSemester)) return false;
+    }
+
+    // *** NEW SECTION FILTER LOGIC ***
+    if (filterSection !== "all" && user.role === 'student' && user.section !== filterSection) return false;
+
+    // Search filter
+    if (filterSearch && !user.name.toLowerCase().includes(filterSearch.toLowerCase()) && 
+        !user.username.toLowerCase().includes(filterSearch.toLowerCase())) return false;
+    
+    return true;
+  });
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -441,7 +472,8 @@ export default function AdminAssignLab(){
               </div>
 
               {/* Filters */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              {/* --- UPDATED FILTER LAYOUT TO INCLUDE SEMESTER AND SECTION --- */}
+              <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
                 <div>
                   <label className="block text-xs font-medium text-gray-700 mb-1">Filter by Role</label>
                   <select
@@ -457,7 +489,7 @@ export default function AdminAssignLab(){
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-1">Filter by Department</label>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Filter by Dept.</label>
                   <select
                     value={filterDepartment}
                     onChange={e => setFilterDepartment(e.target.value)}
@@ -470,11 +502,42 @@ export default function AdminAssignLab(){
                   </select>
                 </div>
 
+                {/* --- NEW SEMESTER FILTER --- */}
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Filter by Sem.</label>
+                  <select
+                    value={filterSemester}
+                    onChange={e => setFilterSemester(e.target.value)}
+                    className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    <option value="all">All Semesters</option>
+                    {[1,2,3,4,5,6,7,8].map(s => (
+                      <option key={s} value={s}>Semester {s}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* --- NEW SECTION FILTER --- */}
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Filter by Section</label>
+                  <select
+                    value={filterSection}
+                    onChange={e => setFilterSection(e.target.value)}
+                    className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    <option value="all">All Sections</option>
+                    {["IT-1","IT-2","IT-3"].map(s => (
+                      <option key={s} value={s}>{s}</option>
+                    ))}
+                  </select>
+                </div>
+                {/* ----------------------------- */}
+
                 <div>
                   <label className="block text-xs font-medium text-gray-700 mb-1">Search</label>
                   <input
                     type="text"
-                    placeholder="Search by name or username..."
+                    placeholder="Search by name/username..."
                     value={filterSearch}
                     onChange={e => setFilterSearch(e.target.value)}
                     className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
@@ -628,14 +691,7 @@ export default function AdminAssignLab(){
                     </tr>
                   </thead>
                   <tbody>
-                    {users
-                      .filter(user => {
-                        if (filterRole !== "all" && user.role !== filterRole) return false;
-                        if (filterDepartment !== "all" && user.department !== filterDepartment) return false;
-                        if (filterSearch && !user.name.toLowerCase().includes(filterSearch.toLowerCase()) && 
-                            !user.username.toLowerCase().includes(filterSearch.toLowerCase())) return false;
-                        return true;
-                      })
+                    {filteredUsers // Using the new filteredUsers variable
                       .map(user => (
                       <tr key={user._id} className="border-b border-gray-100 hover:bg-gray-50">
                         <td className="py-2 px-2">
@@ -674,15 +730,9 @@ export default function AdminAssignLab(){
                 </table>
               </div>
 
-              {users.filter(user => {
-                if (filterRole !== "all" && user.role !== filterRole) return false;
-                if (filterDepartment !== "all" && user.department !== filterDepartment) return false;
-                if (filterSearch && !user.name.toLowerCase().includes(filterSearch.toLowerCase()) && 
-                    !user.username.toLowerCase().includes(filterSearch.toLowerCase())) return false;
-                return true;
-              }).length === 0 && (
+              {filteredUsers.length === 0 && (
                 <div className="text-center py-4 text-xs text-gray-500">
-                  No users found
+                  No users found matching your filters.
                 </div>
               )}
             </div>
