@@ -1,0 +1,11 @@
+name,username,password,role,department,email
+Faculty_A,F001,12345,faculty,IT,faculty1@college.edu
+Faculty_B,F002,12345,faculty,IT,faculty2@college.edu
+Faculty_C,F003,12345,faculty,IT,faculty3@college.edu
+Faculty_D,F004,12345,faculty,IT,faculty4@college.edu
+Faculty_E,F005,12345,faculty,IT,faculty5@college.edu
+Faculty_F,F006,12345,faculty,IT,faculty6@college.edu
+Faculty_G,F007,12345,faculty,IT,faculty7@college.edu
+Faculty_H,F008,12345,faculty,IT,faculty8@college.edu
+Faculty_I,F009,12345,faculty,IT,faculty9@college.edu
+Faculty_J,F010,12345,faculty,IT,faculty10@college.edu
