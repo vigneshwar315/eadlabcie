@@ -2,7 +2,9 @@ import express from "express";
 import { protect, authorizeRoles } from "../middleware/authMiddleware.js";
 import {
   addUser,
+  updateUser,
   addLab,
+  updateLab,
   assignLab,
   generateBatches,
   incrementSemester,
@@ -21,6 +23,7 @@ import {
 const router = express.Router();
 
 router.post("/addUser", protect, authorizeRoles("admin"), addUser);
+router.put("/users/:userId", protect, authorizeRoles("admin"), updateUser);
 router.delete("/users/:userId", protect, authorizeRoles("admin"), deleteUser);
 router.get("/users", protect, authorizeRoles("admin"), getUsers);
 router.post(
@@ -31,6 +34,7 @@ router.post(
 );
 
 router.post("/addLab", protect, authorizeRoles("admin"), addLab);
+router.put("/labs/:labId", protect, authorizeRoles("admin"), updateLab);
 router.delete("/labs/:labId", protect, authorizeRoles("admin"), deleteLab);
 router.get("/labs", protect, authorizeRoles("admin"), getLabs);
 router.post(

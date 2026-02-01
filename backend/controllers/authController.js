@@ -12,10 +12,12 @@ export const login = async (req, res) => {
       return res.status(400).json({ message: "Invalid credentials" });
     }
 
-    // 2️⃣ Compare passwords (hashed or plain text for first-time test)
-    const valid = user.password.startsWith("$2b$")
-      ? await bcrypt.compare(password, user.password)
-      : password === user.password;
+    // 2️⃣ Compare passwords - ALWAYS use bcrypt.compare for hashed passwords
+    if (!user.password) {
+      return res.status(400).json({ message: "Invalid credentials" });
+    }
+
+    const valid = await bcrypt.compare(password, user.password);
 
     if (!valid) {
       return res.status(400).json({ message: "Invalid credentials" });

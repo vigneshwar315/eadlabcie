@@ -42,6 +42,7 @@ export default function AdminAssignLab() {
   // User Management
   const [users, setUsers] = useState([]);
   const [showAddUser, setShowAddUser] = useState(false);
+  const [editingUser, setEditingUser] = useState(null);
   const [newUser, setNewUser] = useState({
     name: "",
     username: "",
@@ -50,6 +51,8 @@ export default function AdminAssignLab() {
     department: "IT",
     semester: 3,
     section: "IT-1",
+    admissionYear: "",
+    graduationYear: "",
   });
   const [filterRole, setFilterRole] = useState("all");
   const [filterDepartment, setFilterDepartment] = useState("all");
@@ -66,6 +69,7 @@ export default function AdminAssignLab() {
 
   // Lab Management
   const [allLabs, setAllLabs] = useState([]);
+  const [editingLab, setEditingLab] = useState(null);
   const [newLab, setNewLab] = useState({ labCode: "", labName: "", semester: 3, department: "IT" });
   const [showBulkLabs, setShowBulkLabs] = useState(false);
   const [bulkLabsFile, setBulkLabsFile] = useState(null);
@@ -266,8 +270,16 @@ export default function AdminAssignLab() {
     setMsg(null);
     setLoading(true);
     try {
-      await API.post("/admin/addUser", newUser);
-      setMsg({ type: "success", text: "User added successfully!" });
+      if (editingUser) {
+        // Update existing user
+        await API.put(`/admin/users/${editingUser._id}`, newUser);
+        setMsg({ type: "success", text: "User updated successfully!" });
+        setEditingUser(null);
+      } else {
+        // Add new user
+        await API.post("/admin/addUser", newUser);
+        setMsg({ type: "success", text: "User added successfully!" });
+      }
       setShowAddUser(false);
       setNewUser({
         name: "",
@@ -277,13 +289,31 @@ export default function AdminAssignLab() {
         department: "IT",
         semester: 3,
         section: "IT-1",
+        admissionYear: "",
+        graduationYear: "",
       });
       fetchUsers();
     } catch (err) {
-      setMsg({ type: "error", text: err?.response?.data?.message || "Failed to add user" });
+      setMsg({ type: "error", text: err?.response?.data?.message || "Failed to save user" });
     } finally {
       setLoading(false);
     }
+  };
+
+  const startEditUser = (user) => {
+    setEditingUser(user);
+    setNewUser({
+      name: user.name,
+      username: user.username,
+      password: "",
+      role: user.role,
+      department: user.department,
+      semester: user.semester || 3,
+      section: user.section || "IT-1",
+      admissionYear: user.admissionYear || "",
+      graduationYear: user.graduationYear || "",
+    });
+    setShowAddUser(true);
   };
 
   const deleteUser = async (userId) => {
@@ -373,16 +403,34 @@ export default function AdminAssignLab() {
     setMsg(null);
     setLoading(true);
     try {
-      await API.post("/admin/addLab", newLab);
-      setMsg({ type: "success", text: "Lab added successfully!" });
+      if (editingLab) {
+        // Update existing lab
+        await API.put(`/admin/labs/${editingLab._id}`, newLab);
+        setMsg({ type: "success", text: "Lab updated successfully!" });
+        setEditingLab(null);
+      } else {
+        // Add new lab
+        await API.post("/admin/addLab", newLab);
+        setMsg({ type: "success", text: "Lab added successfully!" });
+      }
       setNewLab({ labCode: "", labName: "", semester: 3, department: "IT" });
       fetchAllLabs();
       fetchLabs();
     } catch (err) {
-      setMsg({ type: "error", text: err?.response?.data?.message || "Failed to add lab" });
+      setMsg({ type: "error", text: err?.response?.data?.message || "Failed to save lab" });
     } finally {
       setLoading(false);
     }
+  };
+
+  const startEditLab = (lab) => {
+    setEditingLab(lab);
+    setNewLab({
+      labCode: lab.labCode,
+      labName: lab.labName,
+      semester: lab.semester,
+      department: lab.department,
+    });
   };
 
   const handleBulkLabsFileChange = (e) => {
@@ -557,9 +605,10 @@ export default function AdminAssignLab() {
                     <input
                       type="text"
                       required
+                      disabled={!!editingLab}
                       value={newLab.labCode}
                       onChange={(e) => setNewLab((p) => ({ ...p, labCode: e.target.value }))}
-                      className="w-full px-2 py-1.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full px-2 py-1.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100"
                       placeholder="e.g. 22ITC09"
                     />
                   </div>
@@ -599,13 +648,27 @@ export default function AdminAssignLab() {
                     </select>
                   </div>
                 </div>
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium disabled:opacity-50"
-                >
-                  {loading ? "Adding..." : "Add Lab"}
-                </button>
+                <div className="flex gap-2">
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium disabled:opacity-50"
+                  >
+                    {loading ? (editingLab ? "Updating..." : "Adding...") : (editingLab ? "Update Lab" : "Add Lab")}
+                  </button>
+                  {editingLab && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setEditingLab(null);
+                        setNewLab({ labCode: "", labName: "", semester: 3, department: "IT" });
+                      }}
+                      className="bg-gray-300 hover:bg-gray-400 text-gray-900 px-4 py-2 rounded-lg text-sm font-medium"
+                    >
+                      Cancel Edit
+                    </button>
+                  )}
+                </div>
               </form>
             </div>
             <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
@@ -631,7 +694,17 @@ export default function AdminAssignLab() {
                           <td className="py-2 px-2">{l.labName}</td>
                           <td className="py-2 px-2">{l.semester}</td>
                           <td className="py-2 px-2">{l.department}</td>
-                          <td className="py-2 px-2">
+                        <td className="py-2 px-2">
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => startEditLab(l)}
+                              className="text-blue-600 hover:text-blue-800 p-1 rounded hover:bg-blue-50"
+                              title="Edit Lab"
+                            >
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                              </svg>
+                            </button>
                             <button
                               onClick={() => deleteLab(l._id)}
                               className="text-red-600 hover:text-red-800 p-1 rounded hover:bg-red-50"
@@ -641,7 +714,8 @@ export default function AdminAssignLab() {
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                               </svg>
                             </button>
-                          </td>
+                          </div>
+                        </td>
                         </tr>
                       ))}
                     </tbody>
@@ -1119,9 +1193,23 @@ export default function AdminAssignLab() {
                 <div className="w-full h-full">
                   <div className="p-6">
                     <div className="flex justify-between items-center mb-6">
-                      <h3 className="text-lg font-semibold text-gray-900">Add New User</h3>
+                      <h3 className="text-lg font-semibold text-gray-900">{editingUser ? "Edit User" : "Add New User"}</h3>
                       <button
-                        onClick={() => setShowAddUser(false)}
+                        onClick={() => {
+                          setShowAddUser(false);
+                          setEditingUser(null);
+                          setNewUser({
+                            name: "",
+                            username: "",
+                            password: "",
+                            role: "student",
+                            department: "IT",
+                            semester: 3,
+                            section: "IT-1",
+                            admissionYear: "",
+                            graduationYear: "",
+                          });
+                        }}
                         className="text-gray-400 hover:text-gray-600 p-4"
                       >
                         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1141,20 +1229,21 @@ export default function AdminAssignLab() {
                         />
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Username</label>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Username {editingUser && "(read-only)"}</label>
                         <input
                           type="text"
                           required
                           value={newUser.username}
-                          onChange={(e) => handleUserChange("username", e.target.value)}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          onChange={(e) => !editingUser && handleUserChange("username", e.target.value)}
+                          disabled={!!editingUser}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100"
                         />
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Password {editingUser && "(leave blank to keep current)"}</label>
                         <input
                           type="password"
-                          required
+                          required={!editingUser}
                           value={newUser.password}
                           onChange={(e) => handleUserChange("password", e.target.value)}
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
@@ -1213,10 +1302,48 @@ export default function AdminAssignLab() {
                           </div>
                         </div>
                       )}
+                      {newUser.role === "student" && (
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Admission Year</label>
+                            <input
+                              type="number"
+                              value={newUser.admissionYear}
+                              onChange={(e) => handleUserChange("admissionYear", e.target.value)}
+                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                              placeholder="e.g., 2022"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Graduation Year</label>
+                            <input
+                              type="number"
+                              value={newUser.graduationYear}
+                              onChange={(e) => handleUserChange("graduationYear", e.target.value)}
+                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                              placeholder="e.g., 2026"
+                            />
+                          </div>
+                        </div>
+                      )}
                       <div className="flex justify-end space-x-3 pt-4">
                         <button
                           type="button"
-                          onClick={() => setShowAddUser(false)}
+                          onClick={() => {
+                            setShowAddUser(false);
+                            setEditingUser(null);
+                            setNewUser({
+                              name: "",
+                              username: "",
+                              password: "",
+                              role: "student",
+                              department: "IT",
+                              semester: 3,
+                              section: "IT-1",
+                              admissionYear: "",
+                              graduationYear: "",
+                            });
+                          }}
                           className="px-4 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors duration-200"
                         >
                           Cancel
@@ -1226,7 +1353,7 @@ export default function AdminAssignLab() {
                           disabled={loading}
                           className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200 disabled:opacity-50"
                         >
-                          {loading ? "Adding..." : "Add User"}
+                          {loading ? (editingUser ? "Updating..." : "Adding...") : (editingUser ? "Update User" : "Add User")}
                         </button>
                       </div>
                     </form>
@@ -1372,16 +1499,27 @@ export default function AdminAssignLab() {
                             : "—"}
                         </td>
                         <td className="py-2 px-2">
-                          <button
-                            onClick={() => deleteUser(user._id)}
-                            disabled={user.status === "passedout"}
-                            className={`p-1 rounded ${user.status === "passedout" ? "text-gray-300 cursor-not-allowed" : "text-red-600 hover:text-red-800 hover:bg-red-50"}`}
-                            title={user.status === "passedout" ? "Cannot delete passed-out students" : "Delete User"}
-                          >
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                            </svg>
-                          </button>
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => startEditUser(user)}
+                              className="text-blue-600 hover:text-blue-800 p-1 rounded hover:bg-blue-50"
+                              title="Edit User"
+                            >
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                              </svg>
+                            </button>
+                            <button
+                              onClick={() => deleteUser(user._id)}
+                              disabled={user.status === "passedout"}
+                              className={`p-1 rounded ${user.status === "passedout" ? "text-gray-300 cursor-not-allowed" : "text-red-600 hover:text-red-800 hover:bg-red-50"}`}
+                              title={user.status === "passedout" ? "Cannot delete passed-out students" : "Delete User"}
+                            >
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                              </svg>
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))}

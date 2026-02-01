@@ -66,6 +66,46 @@ export const addUser = async (req, res) => {
   }
 };
 
+export const updateUser = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const { name, password, role, department, semester, section, admissionYear, graduationYear, email } = req.body;
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Update fields
+    user.name = name || user.name;
+    user.role = role || user.role;
+    user.department = department || user.department;
+    user.email = email !== undefined ? email : user.email;
+    
+    if (role === "student" || user.role === "student") {
+      user.semester = semester !== undefined ? semester : user.semester;
+      user.section = section || user.section;
+      user.admissionYear = admissionYear ? Number(admissionYear) : user.admissionYear;
+      user.graduationYear = graduationYear ? Number(graduationYear) : user.graduationYear;
+    }
+
+    // Only hash password if provided
+    if (password) {
+      user.password = await bcrypt.hash(password, 10);
+    }
+
+    await user.save();
+
+    res.status(200).json({
+      message: "User updated successfully",
+      user: user.toObject(),
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Server Error", error: error.message });
+  }
+};
+
 export const addLab = async (req, res) => {
   try {
     const { labCode, labName, semester, department } = req.body;
@@ -78,6 +118,33 @@ export const addLab = async (req, res) => {
     res.status(201).json({
       message: "Lab added successfully",
       lab: newLab,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Server Error", error: error.message });
+  }
+};
+
+export const updateLab = async (req, res) => {
+  try {
+    const { labId } = req.params;
+    const { labCode, labName, semester, department } = req.body;
+
+    const lab = await Lab.findById(labId);
+    if (!lab) {
+      return res.status(404).json({ message: "Lab not found" });
+    }
+
+    lab.labCode = labCode || lab.labCode;
+    lab.labName = labName || lab.labName;
+    lab.semester = semester !== undefined ? semester : lab.semester;
+    lab.department = department || lab.department;
+
+    await lab.save();
+
+    res.status(200).json({
+      message: "Lab updated successfully",
+      lab: lab,
     });
   } catch (error) {
     console.error(error);
