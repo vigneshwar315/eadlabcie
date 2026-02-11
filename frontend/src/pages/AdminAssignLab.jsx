@@ -139,6 +139,18 @@ export default function AdminAssignLab() {
   const submitCreateAssignment = async (e) => {
     e.preventDefault();
     setMsg(null);
+    
+    // Validate form inputs
+    if (!selectedLab) {
+      setMsg({ type: "error", text: "Please select a lab first. If no labs appear, create them in the Lab Management tab." });
+      return;
+    }
+    
+    if (labs.length === 0) {
+      setMsg({ type: "error", text: "No labs available for Semester " + semester + ". Please add labs in the Lab Management tab." });
+      return;
+    }
+    
     setLoading(true);
     try {
       const payload = {
@@ -819,7 +831,12 @@ export default function AdminAssignLab() {
         {activeTab === "assignments" && (
           <div className="space-y-8">
             <div className="bg-white p-8 rounded-xl shadow-sm border border-gray-200">
-              <h1 className="text-xl font-semibold text-gray-900 mb-6">Create Lab Assignment</h1>
+              <h1 className="text-xl font-semibold text-gray-900 mb-2">Create Lab Assignment</h1>
+              {labs.length === 0 && (
+                <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg text-amber-800 text-sm">
+                  ⚠️ No labs found for Semester {semester}. Please go to the <strong>Lab Management</strong> tab to add labs first.
+                </div>
+              )}
               <form onSubmit={submitCreateAssignment} className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   <div>
