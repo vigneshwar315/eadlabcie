@@ -163,9 +163,14 @@ export const assignLab = async (req, res) => {
       semesterType,
     } = req.body;
 
+    // Validate labId is provided
+    if (!labId) {
+      return res.status(400).json({ message: "Lab ID is required. Please select a lab." });
+    }
+
     const lab = await Lab.findById(labId);
     if (!lab) {
-      return res.status(404).json({ message: "Invalid lab" });
+      return res.status(404).json({ message: "Lab not found. The selected lab may have been deleted." });
     }
 
     // Validate semester
